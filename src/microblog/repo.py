@@ -2,6 +2,7 @@
 Reading microblog from git commit history
 '''
 
+import re
 from collections import UserDict
 from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ renderers = dict(
     plaintext = str,
     lowercase = str.lower,
     uppercase = str.upper,
+    wikitext  = str,  # TODO
+    markdown  = str,  # TODO
 )
 
 
@@ -25,11 +28,12 @@ class MicroblogEntry:
     timestamp: datetime
     raw: str
     author: str
-    markup: str
     metadata: Mapping
+    default_markup = 'plaintext'
 
     def __post_init__(self):
-        if self.markup.lower() not in renderers:
+        self.markup = self.metadata.get('markup', self.default_markup).lower()
+        if self.markup not in renderers:
             raise ValueError(f'unsupported markup format: {self.markup}')
 
     @property
@@ -70,7 +74,29 @@ class MicroblogRepo:
 
     def entry(self, commit) -> MicroblogEntry:
         '''Read MicroblogEntry from commit'''
-        return commit  # FIXME
+        raw, metadata = self.parse_metadata(commit.message)
+        return MicroblogEntry(
+            timestamp=commit.committed_datetime,
+            author=commit.author,
+            raw=raw,
+            metadata=metadata,
+        )
 
-    def parse_metadata(self, text) -> MicroblogMetadata:
-        '''Find MicroblogMetadata in free-form text'''
+    def parse_metadata(self, text) -> [str, MicroblogMetadata]:
+        '''Separate MicroblogMetadata from free-form text'''
+        metadata_prefix = 'Microblog-'
+        metadata_regex = re.compile(rf'^{metadata_prefix}(\w+)\:(.*)')
+        raw_lines = list()
+        metadata = MicroblogMetadata()
+        for line in reversed(text.splitlines()):
+            if raw_lines:  # we have already seen a non-metadata line
+                raw_lines.append(line)
+                continue
+            match = metadata_regex.search(line)
+            if not match and line.strip():  # this is the first non-metadata line
+                raw_lines.append(line)
+            if not match:
+                continue
+            key, value = match.groups()
+            metadata[key] = value.strip()
+        return '\n'.join(reversed(raw_lines)), metadata

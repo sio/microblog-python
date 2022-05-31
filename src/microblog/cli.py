@@ -23,7 +23,14 @@ def main(*a, **ka):
 
 @dataclass
 class MicroblogCLI:
-    repo: str = ''
+
+    _repo: str = ''
+    @property
+    def repo(self):
+        return Path(self._repo)
+    @repo.setter
+    def repo(self, value):
+        self._repo = str(value)
 
     def __init__(self, args):
         self.args = args
@@ -55,12 +62,19 @@ class MicroblogCLI:
         for key, value in saved.items():
             setattr(self, key, value)
         log.debug(f'Loaded {self} from {self.args.state}')
+        self._validate()
+
+    def _validate(self):
+        if not self.repo.exists() or not self.repo.is_dir():
+            raise ValueError(f'directory does not exist: {self.repo}')
 
     def run(self):
         '''Execute action specified by args'''
         log.debug(f'Executing {self.args.action} on {self}')
         action = getattr(self, self.args.action)
-        return action()
+        result = action()
+        self._validate()
+        return result
 
     def open(self):
         '''Remember which repo we will work with from now on'''

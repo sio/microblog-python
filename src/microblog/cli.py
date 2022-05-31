@@ -11,6 +11,7 @@ from tempfile import NamedTemporaryFile
 
 from . import logging
 from .logging import log
+from .repo import MicroblogRepo
 
 
 def main(*a, **ka):
@@ -42,7 +43,7 @@ class MicroblogCLI:
     def _dump(self):
         '''Dump state to persistent storage'''
         statefile = self.args.state.resolve()
-        log.debug(f'Dumping {self} to {statefile}')
+        log.debug(f'Saving {self} to {statefile}')
         with NamedTemporaryFile(
                 mode='w',
                 prefix=__package__,
@@ -80,6 +81,11 @@ class MicroblogCLI:
         '''Remember which repo we will work with from now on'''
         self.repo = self.args.repo
 
+    def dump(self):
+        microblog = MicroblogRepo(self.repo)
+        for entry in microblog.entries():
+            print(entry)
+
 
 def parse_args(*a, **ka):
     parser = argparse.ArgumentParser(
@@ -111,6 +117,10 @@ def parse_args(*a, **ka):
         metavar='PATH',
         type=Path,
         help='Path to git repository on local machine',
+    )
+    cmd.dump = subcommands.add_parser(
+        'dump',
+        help='Dump microblog to stdout',
     )
 
     args = parser.parse_args(*a, **ka)

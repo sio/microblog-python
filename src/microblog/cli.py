@@ -60,21 +60,26 @@ class MicroblogCLI:
             <head>
               <title>{title}</title>
               <meta charset='utf-8'>
+              <meta name="viewport" content="width=device-width, initial-scale=1">
               <style>
                 body {{
                   max-width: 30em;
-                  margin: 0 auto!important;
+                  margin: 0 auto 90vh auto!important;
+                  padding: 0 2px;
                 }}
                 footer {{
-                  color: gray;
                   text-align: right;
+                }}
+                footer a {{
+                  color: gray;
+                  text-decoration: none;
                 }}
                 article {{
                   margin: 0 auto 1em auto;
                   padding: 0.5em;
                   border: solid;
                   border-radius: 1em;
-                  border-color: gray;
+                  border-color: rgba(100, 100, 100, .35);
                   border-width: 1px;
                 }}
               </style>
@@ -88,9 +93,10 @@ class MicroblogCLI:
         title = self.microblog.config.get('microblog', {}).get('title', 'Microblog Title')
         body = []
         post = dedent('''
-            <article>
+            <article id="{commit}">
             {body}
-            <footer title="{commit}">{footer}</footer>
+            <footer title="{commit}">
+            <a href="#{commit}">{footer}</a></footer>
             </article>
             ''')
         for entry in self.microblog.entries():

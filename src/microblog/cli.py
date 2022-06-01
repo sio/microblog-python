@@ -74,6 +74,9 @@ class MicroblogCLI:
                   color: gray;
                   text-decoration: none;
                 }}
+                article:target {{
+                  background-color: #ffffe0;
+                }}
                 article {{
                   margin: 0 auto 1em auto;
                   padding: 0.5em;

@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 import git
+import toml
 
 from .logging import log
 
@@ -63,6 +64,14 @@ class MicroblogRepo:
     def __init__(self, repo_path):
         self.path = Path(repo_path)
         self.repo = git.Repo(repo_path)
+        self.config = self._load_config()
+
+    def _load_config(self):
+        config = self.path / 'microblog.toml'
+        if config.exists():
+            with config.open() as c:
+                return toml.load(c)
+        return dict()
 
     def entries(self, start=None):
         '''Yield MicroblogEntries starting from the provided commit'''
@@ -78,11 +87,14 @@ class MicroblogRepo:
     def entry(self, commit) -> MicroblogEntry:
         '''Read MicroblogEntry from commit'''
         raw, metadata = self.parse_metadata(commit.message)
+        if 'markup' in self.config.get('default', {}) and 'markup' not in metadata:
+            metadata['markup'] = self.config['default']['markup']
         return MicroblogEntry(
             timestamp=commit.committed_datetime,
-            author=commit.author,
+            author=str(commit.author),
             raw=raw,
             metadata=metadata,
+            commit=str(commit),
         )
 
     def parse_metadata(self, text) -> [str, MicroblogMetadata]:

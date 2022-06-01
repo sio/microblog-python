@@ -74,6 +74,9 @@ class MicroblogRepo:
             if any(commit.tree != parent.tree for parent in commit.parents):
                 log.debug(f'Skipping non-empty commit {commit}')
                 continue
+            if not commit.parents and (commit.tree.size or commit.tree.blobs):
+                log.debug(f'Skipping non-empty initial commit {commit}')
+                continue
             yield self.entry(commit)
 
     def entry(self, commit) -> MicroblogEntry:

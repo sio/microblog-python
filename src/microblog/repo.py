@@ -23,6 +23,7 @@ class MicroblogEntry:
     author: str
     metadata: Mapping
     commit: str
+    drop_header: bool = False
     markup: str = 'plaintext'
 
     def __post_init__(self):
@@ -38,7 +39,7 @@ class MicroblogEntry:
 
     def render(self):
         renderer = getattr(renderers, self.markup)
-        self._html = renderer(self.raw)
+        self._html = renderer(self.raw, drop_header=self.drop_header)
         return self._html
 
 
@@ -57,6 +58,8 @@ class MicroblogRepo:
         self.path = Path(repo_path)
         self.repo = git.Repo(repo_path)
         self.config = self._load_config()
+        drop_header_regex = self.config.get('default', {}).get('drop_header', r'^$')
+        self.drop_header = re.compile(drop_header_regex)
 
     def _load_config(self):
         config = self.path / 'microblog.toml'
@@ -84,12 +87,14 @@ class MicroblogRepo:
         raw, metadata = self.parse_metadata(commit.message)
         if 'markup' in self.config.get('default', {}) and 'markup' not in metadata:
             metadata['markup'] = self.config['default']['markup']
+        header, body = renderers.split_header(raw)
         return MicroblogEntry(
             timestamp=commit.committed_datetime,
             author=str(commit.author),
             raw=raw,
             metadata=metadata,
             commit=str(commit),
+            drop_header=bool(self.drop_header.fullmatch(header)),
         )
 
     def parse_metadata(self, text) -> [str, MicroblogMetadata]:

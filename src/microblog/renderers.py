@@ -21,12 +21,12 @@ def _split_header(text):
     return header, body
 
 
-def plaintext(text):
+def plaintext(text, escape=html.escape):
     '''Render HTML from plain text'''
     header, body = _split_header(text)
     parts = []
     if header:
-        parts.append(f'<h1>{html.escape(header)}</h1>')
+        parts.append(f'<h1>{escape(header)}</h1>')
     for paragraph in body.split('\n\n'):
         if not paragraph.strip():
             continue
@@ -35,20 +35,20 @@ def plaintext(text):
             if not chunk.strip():
                 continue
             if URL.fullmatch(chunk):
-                chunks.append(f'<a href="{chunk}">{html.escape(chunk)}</a>')
+                chunks.append(f'<a href="{chunk}">{escape(chunk)}</a>')
             else:
-                chunks.append(html.escape(chunk))
+                chunks.append(escape(chunk))
         paragraph = '\n'.join(chunks)
         parts.append(f'<p>{paragraph}</p>')
     return '\n'.join(parts)
 
 
 def lowercase(text):
-    return plaintext(text.lower())
+    return plaintext(text, escape=lambda x: html.escape(x).lower())
 
 
 def uppercase(text):
-    return plaintext(text.upper())
+    return plaintext(text, escape=lambda x: html.escape(x).upper())
 
 
 def wikitext(text):  # TODO

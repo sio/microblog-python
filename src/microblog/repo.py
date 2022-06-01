@@ -63,10 +63,12 @@ class MicroblogRepo:
         self.path = Path(repo_path)
         self.repo = git.Repo(repo_path)
 
-    def entries(self):
-        '''Yield MicroblogEntries in no particular order'''
+    def entries(self, start=None):
+        '''Yield MicroblogEntries starting from the provided commit'''
         repo = self.repo
-        for commit in repo.iter_commits(repo.head.commit):
+        if start is None:
+            start = repo.head.commit
+        for commit in repo.iter_commits(start):
             if any(commit.tree != parent.tree for parent in commit.parents):
                 log.debug(f'Skipping non-empty commit {commit}')
                 continue

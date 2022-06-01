@@ -12,16 +12,8 @@ from pathlib import Path
 import git
 import toml
 
+from . import renderers
 from .logging import log
-
-
-renderers = dict(
-    plaintext = str,
-    lowercase = str.lower,
-    uppercase = str.upper,
-    wikitext  = str,  # TODO
-    markdown  = str,  # TODO
-)
 
 
 @dataclass
@@ -35,7 +27,7 @@ class MicroblogEntry:
 
     def __post_init__(self):
         self.markup = self.metadata.get('markup', self.markup).lower()
-        if self.markup not in renderers:
+        if not hasattr(renderers, self.markup):
             raise ValueError(f'unsupported markup format: {self.markup}')
 
     @property
@@ -45,7 +37,7 @@ class MicroblogEntry:
         return self._html
 
     def render(self):
-        renderer = self.renderers[self.markup]
+        renderer = getattr(renderers, self.markup)
         self._html = renderer(self.raw)
         return self._html
 

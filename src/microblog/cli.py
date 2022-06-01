@@ -84,7 +84,11 @@ class MicroblogCLI:
     def dump(self):
         microblog = MicroblogRepo(self.repo)
         for entry in microblog.entries():
+            print('--- MICROBLOG ENTRY')
             print(entry)
+            print(' -- Rendered HTML')
+            print(entry.html)
+            print()
 
 
 def parse_args(*a, **ka):

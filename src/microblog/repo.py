@@ -29,10 +29,11 @@ class MicroblogEntry:
     raw: str
     author: str
     metadata: Mapping
-    default_markup = 'plaintext'
+    commit: str
+    markup: str = 'plaintext'
 
     def __post_init__(self):
-        self.markup = self.metadata.get('markup', self.default_markup).lower()
+        self.markup = self.metadata.get('markup', self.markup).lower()
         if self.markup not in renderers:
             raise ValueError(f'unsupported markup format: {self.markup}')
 

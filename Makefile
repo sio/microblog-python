@@ -12,6 +12,7 @@ Makefile.venv:
 ACTION=\
   dump\
   help\
+  html\
 
 
 .PHONY: $(ACTION)

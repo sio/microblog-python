@@ -5,6 +5,7 @@ Command line interface
 import argparse
 import os
 from pathlib import Path
+from textwrap import dedent
 
 from . import logging
 from .logging import log
@@ -32,6 +33,7 @@ class MicroblogCLI:
     def __init__(self, args):
         self.args = args
         self.repo = self.args.repo
+        self.microblog = MicroblogRepo(self.repo)
 
     def __repr__(self):
         return f'<{self.__class__.__name__} repo={self.repo.resolve()}>'
@@ -44,13 +46,69 @@ class MicroblogCLI:
         return result
 
     def dump(self):
-        microblog = MicroblogRepo(self.repo)
-        for entry in microblog.entries():
+        for entry in self.microblog.entries():
             print('--- MICROBLOG ENTRY')
             print(entry)
             print(' -- Rendered HTML')
             print(entry.html)
             print()
+
+    def html(self):
+        html5 = dedent('''
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>{title}</title>
+              <meta charset='utf-8'>
+              <style>
+                body {{
+                  max-width: 30em;
+                  margin: 0 auto!important;
+                }}
+                footer {{
+                  color: gray;
+                  text-align: right;
+                }}
+                article {{
+                  margin: 0 auto 1em auto;
+                  padding: 0.5em;
+                  border: solid;
+                  border-radius: 1em;
+                  border-color: gray;
+                  border-width: 1px;
+                }}
+              </style>
+            </head>
+            <body>
+              <h1>{title}</h1>
+              {body}
+            </body>
+            </html>
+            ''')
+        title = self.microblog.config.get('microblog', {}).get('title', 'Microblog Title')
+        body = []
+        post = dedent('''
+            <article>
+            {body}
+            <footer title="{commit}">{footer}</footer>
+            </article>
+            ''')
+        for entry in self.microblog.entries():
+            body.append(post.format(
+                body=entry.html,
+                footer=f'by {entry.author} on {entry.timestamp}',
+                commit=entry.commit,
+            ))
+
+        output = self.args.output  # None is converted to sys.stdout automatically
+        if output is not None:
+            output = open(output, 'w')
+        print(html5.format(
+            title=title,
+            body='\n'.join(body)
+        ), file=output)
+        if output:
+            output.close()
 
 
 def parse_args(*a, **ka):
@@ -74,6 +132,17 @@ def parse_args(*a, **ka):
         metavar='SUBCOMMAND',
     )
     cmd = argparse.Namespace()
+    cmd.html = subcommands.add_parser(
+        'html',
+        help='Render full blog to one-page HTML document',
+    )
+    cmd.html.add_argument(
+        'output',
+        metavar='output.html',
+        default=None,
+        nargs='?',
+        help='Save HTML output to this file. Stdout will be used if no file is specified'
+    )
     cmd.dump = subcommands.add_parser(
         'dump',
         help='Dump microblog to stdout',

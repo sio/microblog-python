@@ -12,7 +12,6 @@ Makefile.venv:
 ACTION=\
   dump\
   help\
-  open\
 
 
 .PHONY: $(ACTION)

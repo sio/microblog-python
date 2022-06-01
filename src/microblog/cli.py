@@ -4,11 +4,7 @@ Command line interface
 
 import argparse
 import os
-import sys
-import toml
-from dataclasses import dataclass, asdict
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 from . import logging
 from .logging import log
@@ -23,7 +19,6 @@ def main(*a, **ka):
     cli.run()
 
 
-@dataclass
 class MicroblogCLI:
 
     _repo: str = ''
@@ -36,55 +31,17 @@ class MicroblogCLI:
 
     def __init__(self, args):
         self.args = args
-        self._load()
-        if not self._repo and self.args.action != 'open':
-            log.error('Repository was not specified, use "open" subcommand first')
-            sys.exit(1)
+        self.repo = self.args.repo
 
-    def __del__(self):
-        if self._repo:
-            self._dump()
-
-    def _dump(self):
-        '''Dump state to persistent storage'''
-        statefile = self.args.state.resolve()
-        log.debug(f'Saving {self} to {statefile}')
-        with NamedTemporaryFile(
-                mode='w',
-                prefix=__package__,
-                dir=statefile.parent,
-                delete=False,
-        ) as temp:
-            toml.dump(asdict(self), temp)
-            temp.flush()
-        os.replace(temp.name, statefile)  # atomic because we stay on the same filesystem
-
-    def _load(self):
-        '''Load state from persistent storage'''
-        if not self.args.state.exists():
-            return
-        with self.args.state.open() as state:
-            saved = toml.load(state)
-        for key, value in saved.items():
-            setattr(self, key, value)
-        log.debug(f'Loaded {self} from {self.args.state}')
-        self._validate()
-
-    def _validate(self):
-        if not self.repo.exists() or not self.repo.is_dir():
-            raise ValueError(f'directory does not exist: {self.repo}')
+    def __repr__(self):
+        return f'<{self.__class__.__name__} repo={self.repo.resolve()}>'
 
     def run(self):
         '''Execute action specified by args'''
-        log.debug(f'Executing {self.args.action} on {self}')
+        log.debug(f'Action {self.args.action} on {self}')
         action = getattr(self, self.args.action)
         result = action()
-        self._validate()
         return result
-
-    def open(self):
-        '''Remember which repo we will work with from now on'''
-        self.repo = self.args.repo
 
     def dump(self):
         microblog = MicroblogRepo(self.repo)
@@ -102,13 +59,13 @@ def parse_args(*a, **ka):
         epilog='Licensed under Apache License, version 2.0'
     )
     parser.add_argument(
-        '--state',
+        '--repo',
         metavar='PATH',
         type=Path,
-        default=os.getenv('MICROBLOG_STATE', './microblog.state'),
+        default=os.getenv('MICROBLOG_REPO', '.'),
         help=(
-            'Path to file that stores persistent state between runs. '
-            'Default: $MICROBLOG_STATE or "./microblog.state"'
+            'Path to the cloned git repo containing a microblog. '
+            'Default: $MICROBLOG_REPO or "."'
         ),
     )
     subcommands = parser.add_subparsers(
@@ -117,16 +74,6 @@ def parse_args(*a, **ka):
         metavar='SUBCOMMAND',
     )
     cmd = argparse.Namespace()
-    cmd.open = subcommands.add_parser(
-        'open',
-        help='Open microblog from cloned git repository'
-    )
-    cmd.open.add_argument(
-        'repo',
-        metavar='PATH',
-        type=Path,
-        help='Path to git repository on local machine',
-    )
     cmd.dump = subcommands.add_parser(
         'dump',
         help='Dump microblog to stdout',
@@ -134,13 +81,8 @@ def parse_args(*a, **ka):
 
     args = parser.parse_args(*a, **ka)
 
-    if not (args.state.parent.exists() and args.state.parent.is_dir()):
-        parser.error(f'not a directory: {args.state.parent}')
-    if args.state.is_dir():
-        parser.error(f'directory exists in place of state file: {args.state}')
-
-    if args.action == 'open':
-        git = args.repo / '.git'
-        if not git.exists() or not git.is_dir():
-            parser.error(f'not a git repository: {args.repo}')
+    git = args.repo / '.git'
+    if not git.exists() or not git.is_dir():
+        parser.error(f'not a git repository: {args.repo}')
+    log.info('Opening microblog from git repository: %s', args.repo.resolve())
     return args

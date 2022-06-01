@@ -42,7 +42,8 @@ class MicroblogCLI:
             sys.exit(1)
 
     def __del__(self):
-        self._dump()
+        if self._repo:
+            self._dump()
 
     def _dump(self):
         '''Dump state to persistent storage'''

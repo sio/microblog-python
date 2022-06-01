@@ -37,15 +37,15 @@ class MicroblogEntry:
             raise ValueError(f'unsupported markup format: {self.markup}')
 
     @property
-    def text(self):
-        if not hasattr(self, '_text'):
-            self._text = self.render()
-        return self._text
+    def html(self):
+        if not hasattr(self, '_html'):
+            self._html = self.render()
+        return self._html
 
     def render(self):
         renderer = self.renderers[self.markup]
-        self._text = renderer(self.raw)
-        return self._text
+        self._html = renderer(self.raw)
+        return self._html
 
 
 class MicroblogMetadata(UserDict):

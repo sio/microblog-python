@@ -5,6 +5,8 @@ Renderers
 import html
 import re
 
+import markdown as md
+
 
 URL = re.compile(r'((?:https?|mailto|ftp|gopher|gemini)://\S+)', re.IGNORECASE)
 
@@ -55,6 +57,25 @@ def wikitext(text):  # TODO: implement a renderer
     return plaintext(text)
 
 
-def markdown(text, header=None): # TODO
+_markdown_extension_configs={
+    'markdown.extensions.codehilite': {
+        'css_class': 'highlight',
+        'guess_lang': False,
+    },
+    'markdown.extensions.extra': {},
+    'markdown.extensions.meta': {},
+    'markdown.extensions.sane_lists': {},
+    'pymdownx.magiclink': {},
+    'pymdownx.saneheaders': {},
+}
+Markdown = md.Markdown(
+    output_format='html5',
+    extensions=list(_markdown_extension_configs),
+    extension_configs=_markdown_extension_configs,
+)
+def markdown(text, header=None):
     '''Render HTML from Markdown text'''
-    return plaintext(text)  # TODO
+    header, body = _split_header(text)
+    if header and not header.strip().startswith('#'):
+        header = f'# {header}'
+    return Markdown.convert(f'{header}\n\n{body}')

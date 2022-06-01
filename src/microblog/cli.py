@@ -4,6 +4,7 @@ Command line interface
 
 import argparse
 import os
+import sys
 import toml
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -36,6 +37,9 @@ class MicroblogCLI:
     def __init__(self, args):
         self.args = args
         self._load()
+        if not self._repo and self.args.action != 'open':
+            log.error('Repository was not specified, use "open" subcommand first')
+            sys.exit(1)
 
     def __del__(self):
         self._dump()

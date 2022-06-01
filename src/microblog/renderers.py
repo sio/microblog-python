@@ -51,7 +51,7 @@ def uppercase(text):
     return plaintext(text, escape=lambda x: html.escape(x).upper())
 
 
-def wikitext(text):  # TODO
+def wikitext(text):  # TODO: implement a renderer
     return plaintext(text)
 
 

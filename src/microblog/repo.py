@@ -100,7 +100,7 @@ class MicroblogRepo:
     def parse_metadata(self, text) -> [str, MicroblogMetadata]:
         '''Separate MicroblogMetadata from free-form text'''
         metadata_prefix = 'Microblog-'
-        metadata_regex = re.compile(rf'^{metadata_prefix}(\w+)\:(.*)')
+        metadata_regex = re.compile(rf'^{metadata_prefix}([^: ]+)\:(.*)')
         raw_lines = list()
         metadata = MicroblogMetadata()
         for line in reversed(text.splitlines()):

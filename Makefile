@@ -1,5 +1,7 @@
 SETUP_PY=setup.cfg
+
 include Makefile.venv
+include makefiles/*.mk
 Makefile.venv:
 	curl \
 		-o Makefile.fetched \

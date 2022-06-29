@@ -67,6 +67,7 @@ class MicroblogGenerator(Generator):
 
     def generate_output(self, writer):
         context = self.context.copy()
+        context['microblog'] = self.microblog
         entries = list(self.microblog.entries())
         writer.write_file(
             name=self.index_dest,

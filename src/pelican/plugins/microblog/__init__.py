@@ -45,26 +45,45 @@ class MicroblogGenerator(Generator):
         if 'MICROBLOG_REPO' not in self.settings:
             raise ValueError('required pelican variable is not defined: MICROBLOG_REPO')
         self.microblog = MicroblogRepo(self.settings['MICROBLOG_REPO'])
-        self.url_pattern = self.settings.get(
-            'MICROBLOG_URL',
+        self.index_url = self.settings.get(
+            'MICROBLOG_INDEX_URL',
             'micro/'
         )
-        self.dest_pattern = self.settings.get(
-            'MICROBLOG_SAVE_AS',
-            self.url_pattern if self.url_pattern.endswith('.html') else f'{self.url_pattern}/index.html'
+        self.index_dest = self.settings.get(
+            'MICROBLOG_INDEX_SAVE_AS',
+            self.index_url if self.index_url.endswith('.html') else f'{self.index_url}/index.html'
+        )
+        self.micro_url = self.settings.get(
+            'MICROBLOG_PAGE_URL',
+            'micro/{commit}/'
+        )
+        self.micro_dest = self.settings.get(
+            'MICROBLOG_PAGE_SAVE_AS',
+            self.micro_url if self.micro_url.endswith('.html') else f'{self.micro_url}/index.html'
         )
         pagination = self.settings['PAGINATED_TEMPLATES']
-        if 'microblog' not in pagination:
-            pagination['microblog'] = None  # Use default settings
+        if 'micros' not in pagination:
+            pagination['micros'] = None  # Use default settings
 
     def generate_output(self, writer):
+        context = self.context.copy()
         entries = list(self.microblog.entries())
         writer.write_file(
-            name=self.dest_pattern,
-            template=self.get_template('microblog'),
-            context=self.context,
+            name=self.index_dest,
+            template=self.get_template('micros'),
+            context=context,
             relative_urls=self.settings['RELATIVE_URLS'],
-            paginated={'microblog': entries},
-            template_name='microblog',
-            url=self.url_pattern,
+            paginated={'micros': entries},
+            template_name='micros',
+            url=self.index_url,
         )
+        for entry in entries:
+            context['micro'] = entry
+            writer.write_file(
+                name=self.micro_dest.format(commit=entry.commit),
+                template=self.get_template('micro'),
+                context=context,
+                relative_urls=self.settings['RELATIVE_URLS'],
+                template_name='micro',
+                url=self.micro_url.format(commit=entry.commit),
+            )

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}
+micros (page {{ micros_page.number}}/{{ micros_paginator.num_pages }})
+{% endblock %}
+
+{% block content %}
+<section id="content" class="body">
+    <ul>
+        {% for entry in micros_page.object_list %}
+        <li>
+          <h4>#{{ entry.commit }}</h4>
+          {{ entry.html }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% if micros_page.has_other_pages() %}
+    <p class="micros-paginator">
+        {% if micros_page.has_previous() %}
+        <a href="{{ SITEURL }}/{{ micros_previous_page.url }}">Previous page</a>
+        {% endif %}
+        {% if micros_page.has_next() %}
+        <a href="{{ SITEURL }}/{{ micros_next_page.url }}">Next page</a>
+        {% endif %}
+    </p>
+    {% endif %}
+</section>
+{% endblock %}
